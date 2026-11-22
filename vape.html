@@ -1,382 +1,74 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>VapeControl 2.0</title>
-<style>
-  :root {
-    --bg: #0b1120;
-    --card: #162032;
-    --card-light: #1e293b;
-    --accent: #38bdf8;
-    --purple: #a855f7;
-    --danger: #f43f5e;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --text: #f8fafc;
-    --muted: #94a3b8;
-  }
-  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--bg); color: var(--text); margin: 0; padding: 16px 14px 50px; display: flex; flex-direction: column; gap: 14px; }
-  
-  .header { display: flex; justify-content: space-between; align-items: center; padding: 4px 2px; }
-  h1 { font-size: 19px; margin: 0; letter-spacing: 0.5px; color: var(--accent); font-weight: 800; }
-  .tabs { display: flex; background: var(--card); border-radius: 14px; padding: 4px; gap: 4px; }
-  .tab { flex: 1; text-align: center; padding: 10px 6px; font-size: 13px; font-weight: 700; border-radius: 10px; color: var(--muted); cursor: pointer; transition: 0.2s; }
-  .tab.active { background: var(--accent); color: #0b1120; }
-
-  .card { background: var(--card); border-radius: 20px; padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
-  .row { display: flex; justify-content: space-between; align-items: center; }
-  .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
-  
-  /* Выбор даты */
-  .date-nav { display: flex; align-items: center; justify-content: space-between; background: var(--card-light); padding: 8px 12px; border-radius: 12px; margin-bottom: 12px; }
-  .date-btn { background: none; border: none; color: var(--accent); font-size: 18px; font-weight: 800; padding: 4px 10px; cursor: pointer; }
-  .date-text { font-size: 14px; font-weight: 700; }
-
-  .big-num { font-size: 38px; font-weight: 800; margin: 4px 0; }
-  .progress-bg { background: #263349; height: 12px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
-  .progress-fill { background: var(--accent); height: 100%; width: 0%; transition: 0.3s; }
-  
-  .btn-grid { display: grid; grid-template-columns: 1fr 1fr 0.6fr; gap: 8px; margin-top: 10px; }
-  button { border: none; border-radius: 14px; padding: 13px 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
-  button:active { transform: scale(0.95); }
-  .btn-primary { background: var(--accent); color: #0b1120; }
-  .btn-secondary { background: var(--card-light); color: var(--text); }
-  .btn-minus { background: rgba(244,63,94,0.15); color: var(--danger); }
-  .btn-gum { background: var(--purple); color: #fff; width: 100%; margin-top: 10px; }
-  .btn-small { padding: 6px 10px; font-size: 12px; border-radius: 8px; background: var(--card-light); color: var(--muted); }
-
-  /* График за 7 дней */
-  .chart { display: flex; align-items: flex-end; justify-content: space-between; height: 110px; gap: 6px; margin-top: 16px; padding-top: 10px; border-top: 1px solid #263349; }
-  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
-  .bar-val { font-size: 10px; color: var(--muted); font-weight: 700; }
-  .bar-stick { width: 100%; background: var(--accent); border-radius: 6px 6px 2px 2px; min-height: 4px; transition: 0.3s; }
-  .bar-day { font-size: 11px; color: var(--muted); }
-
-  /* Таймер и копилка */
-  .timer { font-size: 26px; font-weight: 800; color: var(--success); margin: 8px 0; }
-  .goal-box { background: var(--card-light); border-radius: 14px; padding: 12px; margin-top: 12px; }
-  
-  /* Здоровье */
-  .health-item { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px solid #263349; }
-  .health-item:last-child { border-bottom: none; }
-  .health-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
-  .health-bar-bg { background: #263349; height: 6px; border-radius: 6px; overflow: hidden; }
-  .health-bar-fill { background: var(--success); height: 100%; width: 0%; transition: 0.4s; }
-
-  /* Настройки */
-  .settings-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 14px; gap: 10px; }
-  input[type="number"], input[type="text"] { background: var(--bg); border: 1px solid #334155; color: #fff; padding: 8px 10px; border-radius: 10px; width: 110px; text-align: right; font-size: 14px; }
-  input[type="text"] { width: 150px; text-align: left; }
-  .hidden { display: none; }
-</style>
-</head>
-<body>
-
-<div class="header">
-  <h1>VAPE CONTROL 2.0</h1>
-  <span style="font-size:12px; color:var(--muted)" id="planBadge">Лимит: 250</span>
-</div>
-
-<!-- Вкладки -->
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('main', this)">Трекер</div>
-  <div class="tab" onclick="switchTab('health', this)">Здоровье</div>
-  <div class="tab" onclick="switchTab('settings', this)">Настройки</div>
-</div>
-
-<!-- ВКЛАДКА 1: ТРЕКЕР И СТАТИСТИКА -->
-<div id="tab-main" style="display:flex; flex-direction:column; gap:14px;">
-  
-  <div class="card">
-    <div class="date-nav">
-      <button class="date-btn" onclick="changeDate(-1)">‹</button>
-      <span class="date-text" id="currentDateLabel">Сегодня</span>
-      <button class="date-btn" onclick="changeDate(1)">›</button>
-    </div>
-
-    <div class="row">
-      <span class="label">Затяжки за выбранный день</span>
-      <span style="font-size:12px; color:var(--accent);" id="autoLimitInfo"></span>
-    </div>
-    <div class="big-num"><span id="puffs">0</span> <span style="font-size:18px; color:var(--muted)">/ <span id="limitDisplay">250</span></span></div>
-    <div class="progress-bg"><div class="progress-fill" id="bar"></div></div>
-    
-    <div class="btn-grid">
-      <button class="btn-primary" onclick="addPuff(1)">+1 тяга</button>
-      <button class="btn-secondary" onclick="addPuff(5)">+5 тяг</button>
-      <button class="btn-minus" onclick="addPuff(-1)">-1</button>
-    </div>
-    <button class="btn-gum" onclick="addGum()">🍬 +1 никотиновая жвачка (<span id="gums">0</span>)</button>
-  </div>
-
-  <!-- График за 7 дней -->
-  <div class="card">
-    <div class="row">
-      <span class="label">Динамика за 7 дней</span>
-      <span style="font-size:12px; color:var(--muted)" id="avgPuffs">Среднее: 0</span>
-    </div>
-    <div class="chart" id="weekChart"></div>
-  </div>
-
-  <!-- Таймер и копилка -->
-  <div class="card">
-    <div class="row">
-      <span class="label">Без вейпа</span>
-      <button class="btn-small" onclick="startQuit()">Старт / Сброс</button>
-    </div>
-    <div class="timer" id="timer">Нажми «Старт»</div>
-    
-    <div class="goal-box">
-      <div class="row">
-        <span style="font-size:13px; color:var(--muted);">Копилка: <strong style="color:#fff" id="goalTitleDisplay">Цель</strong></span>
-        <span style="font-weight:800; color:var(--success); font-size:15px;" id="saved">0 ₽</span>
-      </div>
-      <div class="progress-bg" style="height:8px; margin:8px 0 4px;"><div class="progress-fill" id="goalBar" style="background:var(--success)"></div></div>
-      <div class="row" style="font-size:11px; color:var(--muted);">
-        <span id="goalPercent">0% накоплено</span>
-        <span id="goalTargetDisplay">из 10 000 ₽</span>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ВКЛАДКА 2: ЗДОРОВЬЕ -->
-<div id="tab-health" class="hidden">
-  <div class="card">
-    <div class="label" style="margin-bottom:8px;">Восстановление организма</div>
-    <p style="font-size:12px; color:var(--muted); margin-top:0;">Прогресс считается от момента запуска таймера «Без вейпа».</p>
-    <div id="healthList"></div>
-  </div>
-</div>
-
-<!-- ВКЛАДКА 3: НАСТРОЙКИ И РЕЗЕРВНАЯ КОПИЯ -->
-<div id="tab-settings" class="hidden" style="display:flex; flex-direction:column; gap:14px;">
-  <div class="card">
-    <div class="label">Параметры вейпа и снижения</div>
-    <div class="settings-row">
-      <span>Стартовый лимит тяг:</span>
-      <input type="number" id="limitInput" value="250" onchange="saveSettings()">
-    </div>
-    <div class="settings-row">
-      <span>Снижать лимит на (тяг/день):</span>
-      <input type="number" id="stepInput" value="5" onchange="saveSettings()">
-    </div>
-    <div class="settings-row">
-      <span>Цена устройства (₽):</span>
-      <input type="number" id="priceInput" value="2200" onchange="saveSettings()">
-    </div>
-    <div class="settings-row">
-      <span>На сколько дней хватает:</span>
-      <input type="number" id="daysInput" value="28" onchange="saveSettings()">
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="label">Финансовая цель</div>
-    <div class="settings-row">
-      <span>На что копим:</span>
-      <input type="text" id="goalNameInput" value="Подарок себе" onchange="saveSettings()">
-    </div>
-    <div class="settings-row">
-      <span>Сумма цели (₽):</span>
-      <input type="number" id="goalAmountInput" value="10000" onchange="saveSettings()">
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="label">Резервная копия данных</div>
-    <p style="font-size:12px; color:var(--muted);">Сохрани код прогресса в Заметки, чтобы не потерять историю.</p>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-      <button class="btn-secondary" onclick="exportData()">Скопировать</button>
-      <button class="btn-secondary" onclick="importData()">Восстановить</button>
-    </div>
-  </div>
-</div>
-
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="apple-mobile-web-app-capable" content="yes"><title>VapeControl 2.0</title><style>
+:root{--bg:#0b1120;--cd:#162032;--cl:#1e293b;--ac:#38bdf8;--pu:#a855f7;--da:#f43f5e;--su:#10b981;--tx:#f8fafc;--mu:#94a3b8}
+*{box-sizing:border-box;font-family:-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);margin:0;padding:16px 14px 50px;display:flex;flex-direction:column;gap:14px}
+.hd,.row{display:flex;justify-content:space-between;align-items:center}
+h1{font-size:19px;margin:0;color:var(--ac);font-weight:800}
+.tabs{display:flex;background:var(--cd);border-radius:14px;padding:4px;gap:4px}
+.tab{flex:1;text-align:center;padding:10px 6px;font-size:13px;font-weight:700;border-radius:10px;color:var(--mu);cursor:pointer}
+.tab.active{background:var(--ac);color:#0b1120}
+.card{background:var(--cd);border-radius:20px;padding:16px}
+.lbl{font-size:12px;color:var(--mu);text-transform:uppercase;font-weight:700}
+.dnav{display:flex;align-items:center;justify-content:space-between;background:var(--cl);padding:8px 12px;border-radius:12px;margin-bottom:12px}
+.dbtn{background:none;border:none;color:var(--ac);font-size:18px;font-weight:800;padding:4px 10px}
+.bnum{font-size:38px;font-weight:800;margin:4px 0}
+.pbg{background:#263349;height:12px;border-radius:10px;overflow:hidden;margin:10px 0}
+.pfill{background:var(--ac);height:100%;width:0%;transition:.3s}
+.bgrid{display:grid;grid-template-columns:1fr 1fr .6fr;gap:8px;margin-top:10px}
+button{border:none;border-radius:14px;padding:13px 10px;font-size:15px;font-weight:700;cursor:pointer}
+.bp{background:var(--ac);color:#0b1120}.bs{background:var(--cl);color:var(--tx)}.bm{background:rgba(244,63,94,.15);color:var(--da)}.bgum{background:var(--pu);color:#fff;width:100%;margin-top:10px}.bsm{padding:6px 10px;font-size:12px;border-radius:8px;background:var(--cl);color:var(--mu)}
+.chart{display:flex;align-items:flex-end;justify-content:space-between;height:110px;gap:6px;margin-top:16px;padding-top:10px;border-top:1px solid #263349}
+.bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.bval{font-size:10px;color:var(--mu);font-weight:700}.bstk{width:100%;background:var(--ac);border-radius:6px 6px 2px 2px;min-height:4px}.bday{font-size:11px;color:var(--mu)}
+.tmr{font-size:26px;font-weight:800;color:var(--su);margin:8px 0}.gbox{background:var(--cl);border-radius:14px;padding:12px;margin-top:12px}
+.hi{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid #263349}.ht{display:flex;justify-content:space-between;font-size:13px;font-weight:600}.hbg{background:#263349;height:6px;border-radius:6px;overflow:hidden}.hf{background:var(--su);height:100%;width:0%}
+.srow{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:14px}
+input{background:var(--bg);border:1px solid #334155;color:#fff;padding:8px 10px;border-radius:10px;width:120px;text-align:right;font-size:14px}.hid{display:none}
+</style></head><body>
+<div class="hd"><h1>VAPE CONTROL 2.0</h1><span style="font-size:12px;color:var(--mu)" id="pb">Лимит: 250</span></div>
+<div class="tabs"><div class="tab active" id="tb1">Трекер</div><div class="tab" id="tb2">Здоровье</div><div class="tab" id="tb3">Настройки</div></div>
+<div id="t-main" style="display:flex;flex-direction:column;gap:14px">
+<div class="card"><div class="dnav"><button class="dbtn" id="prv">‹</button><span style="font-size:14px;font-weight:700" id="cdl">Сегодня</span><button class="dbtn" id="nxt">›</button></div>
+<div class="row"><span class="lbl">Затяжки за день</span><span style="font-size:12px;color:var(--ac)" id="ali"></span></div>
+<div class="bnum"><span id="pf">0</span> <span style="font-size:18px;color:var(--mu)">/ <span id="ld">250</span></span></div>
+<div class="pbg"><div class="pfill" id="bar"></div></div>
+<div class="bgrid"><button class="bp" id="a1">+1 тяга</button><button class="bs" id="a5">+5 тяг</button><button class="bm" id="s1">-1</button></div>
+<button class="bgum" id="ag">🍬 +1 жвачка (<span id="gm">0</span>)</button></div>
+<div class="card"><div class="row"><span class="lbl">Динамика за 7 дней</span><span style="font-size:12px;color:var(--mu)" id="avg">Среднее: 0</span></div><div class="chart" id="wc"></div></div>
+<div class="card"><div class="row"><span class="lbl">Без вейпа</span><button class="bsm" id="sq">Старт / Сброс</button></div><div class="tmr" id="tmr">Нажми «Старт»</div>
+<div class="gbox"><div class="row"><span style="font-size:13px;color:var(--mu)">Цель: <strong style="color:#fff" id="gtd">Подарок</strong></span><span style="font-weight:800;color:var(--su);font-size:15px" id="svd">0 ₽</span></div>
+<div class="pbg" style="height:8px;margin:8px 0 4px"><div class="pfill" id="gbar" style="background:var(--su)"></div></div>
+<div class="row" style="font-size:11px;color:var(--mu)"><span id="gp">0%</span><span id="gtg">из 10000 ₽</span></div></div></div></div>
+<div id="t-health" class="hid"><div class="card"><div class="lbl" style="margin-bottom:8px">Восстановление организма</div><div id="hl"></div></div></div>
+<div id="t-set" class="hid" style="flex-direction:column;gap:14px"><div class="card"><div class="lbl">Параметры</div>
+<div class="srow"><span>Стартовый лимит:</span><input type="number" id="li"></div><div class="srow"><span>Снижать в день на:</span><input type="number" id="si"></div>
+<div class="srow"><span>Цена вейпа (₽):</span><input type="number" id="pi"></div><div class="srow"><span>На сколько дней:</span><input type="number" id="di"></div>
+<div class="srow"><span>Название цели:</span><input type="text" id="gni" style="text-align:left"></div><div class="srow"><span>Сумма цели (₽):</span><input type="number" id="gai"></div></div>
+<div class="card"><div class="lbl" style="margin-bottom:8px">Резервная копия</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="bs" id="exp">Скопировать</button><button class="bs" id="imp">Восстановить</button></div></div></div>
 <script>
-  function getTodayKey(offset = 0) {
-    const d = new Date();
-    d.setDate(d.getDate() + offset);
-    return d.toISOString().split('T')[0];
-  }
-
-  let state = JSON.parse(localStorage.getItem('vapeTrackerV2')) || {
-    history: {},
-    limit: 250,
-    step: 5,
-    startDate: getTodayKey(0),
-Используйте код с осторожностью.
-
-price: 2200,
-days: 28,
-goalName: 'Подарок себе',
-goalAmount: 10000,
-quitStart: null
-};
-let selectedOffset = 0;
-function save() {
-localStorage.setItem('vapeTrackerV2', JSON.stringify(state));
-render();
-}
-function getDayData(key) {
-if (!state.history[key]) state.history[key] = { puffs: 0, gums: 0 };
-return state.history[key];
-}
-function getDynamicLimit(dateKey) {
-const start = new Date(state.startDate);
-const curr = new Date(dateKey);
-const diffDays = Math.max(0, Math.floor((curr - start) / 86400000));
-return Math.max(0, state.limit - (diffDays * state.step));
-}
-function changeDate(dir) {
-if (selectedOffset + dir > 0) return; // Не уходим в будущее
-selectedOffset += dir;
-render();
-}
-function addPuff(n) {
-const key = getTodayKey(selectedOffset);
-const day = getDayData(key);
-day.puffs = Math.max(0, day.puffs + n);
-save();
-}
-function addGum() {
-const key = getTodayKey(selectedOffset);
-const day = getDayData(key);
-day.gums += 1;
-save();
-}
-function startQuit() {
-if (confirm('Запустить таймер чистого времени с текущей секунды?')) {
-state.quitStart = Date.now();
-save();
-}
-}
-function saveSettings() {
-state.limit = Number(document.getElementById('limitInput').value) || 250;
-state.step = Number(document.getElementById('stepInput').value) || 0;
-state.price = Number(document.getElementById('priceInput').value) || 2200;
-state.days = Number(document.getElementById('daysInput').value) || 28;
-state.goalName = document.getElementById('goalNameInput').value || 'Цель';
-state.goalAmount = Number(document.getElementById('goalAmountInput').value) || 10000;
-save();
-}
-function switchTab(tabName, el) {
-document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-el.classList.add('active');
-document.getElementById('tab-main').style.display = tabName === 'main' ? 'flex' : 'none';
-document.getElementById('tab-health').style.display = tabName === 'health' ? 'block' : 'none';
-document.getElementById('tab-settings').style.display = tabName === 'settings' ? 'flex' : 'none';
-renderHealth();
-}
-function renderChart() {
-const chartEl = document.getElementById('weekChart');
-chartEl.innerHTML = '';
-let maxVal = state.limit || 250;
-let sum = 0, count = 0;
-const daysData = [];
-for (let i = -6; i <= 0; i++) {
-const k = getTodayKey(i);
-const val = (state.history[k] && state.history[k].puffs) || 0;
-if (val > maxVal) maxVal = val;
-if (val > 0) { sum += val; count++; }
-const dObj = new Date();
-dObj.setDate(dObj.getDate() + i);
-const label = dObj.toLocaleDateString('ru-RU', { weekday: 'short' });
-daysData.push({ label, val, isSelected: i === selectedOffset, limit: getDynamicLimit(k) });
-}
-document.getElementById('avgPuffs').innerText = Среднее: ${count ? Math.round(sum / count) : 0};
-daysData.forEach(d => {
-const h = Math.max(4, Math.round((d.val / maxVal) * 75));
-const color = d.val > d.limit ? 'var(--danger)' : (d.isSelected ? 'var(--success)' : 'var(--accent)');
-chartEl.innerHTML += <div class="bar-col"> <span class="bar-val">${d.val}</span> <div class="bar-stick" style="height:${h}px; background:${color}"></div> <span class="bar-day" style="${d.isSelected ? 'color:#fff;font-weight:700' : ''}">${d.label}</span> </div>;
+document.addEventListener('DOMContentLoaded',function(){
+function gk(o){o=o||0;var d=new Date();d.setDate(d.getDate()+o);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+var s=JSON.parse(localStorage.getItem('vc2'))||{h:{},l:250,st:5,sd:gk(0),p:2200,d:28,gn:'Подарок себе',ga:10000,qs:null},off=0;
+function sv(){localStorage.setItem('vc2',JSON.stringify(s));rn()}
+function gd(k){if(!s.h[k])s.h[k]={p:0,g:0};return s.h[k]}
+function dl(k){var df=Math.max(0,Math.floor((new Date(k)-new Date(s.sd))/864e5));return Math.max(0,s.l-(df*s.st))}
+document.getElementById('prv').onclick=function(){off-=1;rn()};
+document.getElementById('nxt').onclick=function(){if(off<0){off+=1;rn()}};
+document.getElementById('a1').onclick=function(){gd(gk(off)).p+=1;sv()};
+document.getElementById('a5').onclick=function(){gd(gk(off)).p+=5;sv()};
+document.getElementById('s1').onclick=function(){var d=gd(gk(off));d.p=Math.max(0,d.p-1);sv()};
+document.getElementById('ag').onclick=function(){gd(gk(off)).g+=1;sv()};
+document.getElementById('sq').onclick=function(){if(confirm('Запустить таймер?')){s.qs=Date.now();sv()}};
+function bt(i,t){document.getElementById(i).onclick=function(){document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active')});this.classList.add('active');document.getElementById('t-main').style.display=t==='main'?'flex':'none';document.getElementById('t-health').style.display=t==='health'?'block':'none';document.getElementById('t-set').style.display=t==='set'?'flex':'none';rh()}}
+bt('tb1','main');bt('tb2','health');bt('tb3','set');
+['li','si','pi','di','gni','gai'].forEach(function(i){document.getElementById(i).onchange=function(){s.l=+document.getElementById('li').value||250;s.st=+document.getElementById('si').value||0;s.p=+document.getElementById('pi').value||2200;s.d=+document.getElementById('di').value||28;s.gn=document.getElementById('gni').value||'Цель';s.ga=+document.getElementById('gai').value||10000;sv()}});
+document.getElementById('exp').onclick=function(){navigator.clipboard.writeText(btoa(unescape(encodeURIComponent(JSON.stringify(s))))).then(function(){alert('Код скопирован!')})};
+document.getElementById('imp').onclick=function(){var x=prompt('Вставь код:');if(x)try{s=JSON.parse(decodeURIComponent(escape(atob(x))));sv();alert('Готово!')}catch(e){alert('Ошибка')}};
+function rc(){var c=document.getElementById('wc');c.innerHTML='';var mx=s.l||250,sm=0,cn=0,arr=[];for(var i=-6;i<=0;i++){var k=gk(i),v=(s.h[k]&&s.h[k].p)||0;if(v>mx)mx=v;if(v>0){sm+=v;cn++}var doj=new Date();doj.setDate(doj.getDate()+i);arr.push({lb:doj.toLocaleDateString('ru-RU',{weekday:'short'}),v:v,sel:i===off,lm:dl(k)})}document.getElementById('avg').innerText='Среднее: '+(cn?Math.round(sm/cn):0);arr.forEach(function(d){var h=Math.max(4,Math.round((d.v/mx)*75)),cl=d.v>d.lm?'var(--da)':(d.sel?'var(--su)':'var(--ac)');c.innerHTML+='<div class="bcol"><span class="bval">'+d.v+'</span><div class="bstk" style="height:'+h+'px;background:'+cl+'"></div><span class="bday">'+(d.sel?'<b>'+d.lb+'</b>':d.lb)+'</span></div>'})}
+var ms=[{t:'Пульс и давление в норме',m:20},{t:'Кислород в крови восстановлен',m:480},{t:'Никотин выведен из организма',m:2880},{t:'Обострились вкус и обоняние',m:4320},{t:'Улучшилось дыхание',m:20160},{t:'Легкие очищаются от слизи',m:43200}];
+function rh(){var l=document.getElementById('hl');l.innerHTML='';var em=s.qs?(Date.now()-s.qs)/6e4:0;ms.forEach(function(m){var p=Math.min(100,Math.floor((em/m.m)*100));l.innerHTML+='<div class="hi"><div class="ht"><span>'+m.t+'</span><span style="color:'+(p===100?'var(--su)':'var(--ac)')+'">'+p+'%</span></div><div class="hbg"><div class="hf" style="width:'+p+'%"></div></div></div>'})}
+function rn(){var k=gk(off),d=gd(k),lm=dl(k);document.getElementById('cdl').innerText=off===0?'Сегодня':(off===-1?'Вчера':k);document.getElementById('pf').innerText=d.p;document.getElementById('gm').innerText=d.g;document.getElementById('ld').innerText=lm;document.getElementById('pb').innerText='Лимит: '+lm;document.getElementById('ali').innerText=s.st>0?'План: -'+s.st+'/день':'';document.getElementById('li').value=s.l;document.getElementById('si').value=s.st;document.getElementById('pi').value=s.p;document.getElementById('di').value=s.d;document.getElementById('gni').value=s.gn;document.getElementById('gai').value=s.ga;document.getElementById('gtd').innerText=s.gn;document.getElementById('gtg').innerText='из '+s.ga+' ₽';var pc=lm>0?Math.min((d.p/lm)*100,100):(d.p>0?100:0),b=document.getElementById('bar');b.style.width=pc+'%';b.style.background=d.p>lm?'var(--da)':'var(--ac)';rc();rh()}
+setInterval(function(){if(!s.qs)return;var df=Date.now()-s.qs,d=Math.floor(df/864e5),h=Math.floor((df%864e5)/36e5),m=Math.floor((df%36e5)/6e4),sc=Math.floor((df%6e4)/1e3);document.getElementById('tmr').innerText=d+'д '+h+'ч '+m+'м '+sc+'с';var mn=df*((s.p/s.d)/864e5);document.getElementById('svd').innerText=mn.toFixed(2)+' ₽';var gp=Math.min(100,(mn/s.ga)*100);document.getElementById('gbar').style.width=gp+'%';document.getElementById('gp').innerText=gp.toFixed(1)+'%'},1e3);
+rn();
 });
-}
-const milestones = [
-{ title: 'Пульс и давление приходят в норму', mins: 20 },
-{ title: 'Уровень кислорода в крови восстанавливается', mins: 480 },
-{ title: 'Никотин полностью выведен из организма', mins: 2880 },
-{ title: 'Обостряются вкус и обоняние', mins: 4320 },
-{ title: 'Улучшается кровообращение и дыхание', mins: 20160 },
-{ title: 'Легкие активно очищаются от слизи', mins: 43200 }
-];
-function renderHealth() {
-const list = document.getElementById('healthList');
-list.innerHTML = '';
-const elapsedMins = state.quitStart ? (Date.now() - state.quitStart) / 60000 : 0;
-milestones.forEach(m => {
-const pct = Math.min(100, Math.floor((elapsedMins / m.mins) * 100));
-list.innerHTML += <div class="health-item"> <div class="health-top"> <span>${m.title}</span> <span style="color:${pct === 100 ? 'var(--success)' : 'var(--accent)'}">${pct}%</span> </div> <div class="health-bar-bg"><div class="health-bar-fill" style="width:${pct}%"></div></div> </div>;
-});
-}
-function render() {
-const key = getTodayKey(selectedOffset);
-const day = getDayData(key);
-const dynLimit = getDynamicLimit(key);
-if (selectedOffset === 0) document.getElementById('currentDateLabel').innerText = 'Сегодня';
-else if (selectedOffset === -1) document.getElementById('currentDateLabel').innerText = 'Вчера';
-else {
-const dObj = new Date();
-dObj.setDate(dObj.getDate() + selectedOffset);
-document.getElementById('currentDateLabel').innerText = dObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-}
-document.getElementById('puffs').innerText = day.puffs;
-document.getElementById('gums').innerText = day.gums;
-document.getElementById('limitDisplay').innerText = dynLimit;
-document.getElementById('planBadge').innerText = Лимит: ${dynLimit};
-document.getElementById('autoLimitInfo').innerText = state.step > 0 ? План: -${state.step} в день : '';
-document.getElementById('limitInput').value = state.limit;
-document.getElementById('stepInput').value = state.step;
-document.getElementById('priceInput').value = state.price;
-document.getElementById('daysInput').value = state.days;
-document.getElementById('goalNameInput').value = state.goalName;
-document.getElementById('goalAmountInput').value = state.goalAmount;
-document.getElementById('goalTitleDisplay').innerText = state.goalName;
-document.getElementById('goalTargetDisplay').innerText = из ${state.goalAmount} ₽;
-const pct = dynLimit > 0 ? Math.min((day.puffs / dynLimit) * 100, 100) : (day.puffs > 0 ? 100 : 0);
-const bar = document.getElementById('bar');
-bar.style.width = pct + '%';
-bar.style.background = day.puffs > dynLimit ? 'var(--danger)' : 'var(--accent)';
-renderChart();
-renderHealth();
-}
-function exportData() {
-const str = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
-navigator.clipboard.writeText(str).then(() => alert('Код прогресса скопирован! Вставь его в Заметки для сохранности.'));
-}
-function importData() {
-const str = prompt('Вставь ранее скопированный код прогресса:');
-if (!str) return;
-try {
-state = JSON.parse(decodeURIComponent(escape(atob(str))));
-save();
-alert('Данные успешно восстановлены!');
-} catch (e) {
-alert('Неверный код!');
-}
-}
-setInterval(() => {
-if (!state.quitStart) {
-document.getElementById('timer').innerText = 'Нажми «Старт»';
-document.getElementById('saved').innerText = '0 ₽';
-return;
-}
-const diff = Date.now() - state.quitStart;
-const d = Math.floor(diff / 86400000);
-const h = Math.floor((diff % 86400000) / 3600000);
-const m = Math.floor((diff % 3600000) / 60000);
-const s = Math.floor((diff % 60000) / 1000);
-document.getElementById('timer').innerText = ${d}д ${h}ч ${m}м ${s}с;
-const perMs = (state.price / state.days) / 86400000;
-const money = diff * perMs;
-document.getElementById('saved').innerText = ${money.toFixed(2)} ₽;
-const gPct = Math.min(100, (money / state.goalAmount) * 100);
-document.getElementById('goalBar').style.width = gPct + '%';
-document.getElementById('goalPercent').innerText = ${gPct.toFixed(1)}% накоплено;
-}, 1000);
-render();
+</script></body></html>
